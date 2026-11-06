@@ -43,9 +43,19 @@ async function initApp() {
 async function fetchMenusFromCloud() {
     try {
         let res = await fetch(`${googleScriptUrl}?action=getMenus`);
-        let cloudMenus = await res.json();
-        if (Array.isArray(cloudMenus) && cloudMenus.length > 0) {
-            menus = cloudMenus;
+        let cloudData = await res.json();
+        
+        // Update Nama Resto dari Cloud jika ada
+        if (cloudData.restoName && cloudData.restoName.trim() !== "") {
+            restoName = cloudData.restoName;
+            localStorage.setItem(STORAGE_KEY_NAME, restoName);
+            document.getElementById('appTitle').innerText = restoName;
+            document.getElementById('welcomeRestoName').innerText = restoName;
+        }
+
+        // Update Daftar Menu dari Cloud jika ada
+        if (Array.isArray(cloudData.menus) && cloudData.menus.length > 0) {
+            menus = cloudData.menus;
             localStorage.setItem(STORAGE_KEY_MENUS, JSON.stringify(menus));
         }
     } catch (err) {
@@ -143,9 +153,13 @@ function saveRestoName() {
         localStorage.setItem(STORAGE_KEY_NAME, restoName);
         document.getElementById('appTitle').innerText = restoName;
         document.getElementById('welcomeRestoName').innerText = restoName;
-        alert("Nama resto diperbarui!");
+        
+        // Simpan ke Google Sheets
+        postToCloud({ action: "saveRestoName", restoName: newName });
+        alert("Nama resto diperbarui dan tersimpan di Cloud!");
     }
 }
+
 
 function changeTable() {
     let newTable = prompt("Nomor Meja:", currentTable);
